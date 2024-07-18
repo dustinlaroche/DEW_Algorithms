@@ -10,6 +10,8 @@
 #include <iostream>
 #endif //CSV_PARSING_H
 
+#define M_PI 3.141592653589793
+
 using namespace std;
 typedef complex<double> Complex;
 
