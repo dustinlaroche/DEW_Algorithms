@@ -1,0 +1,45 @@
+#include <complex>
+#include <vector>
+#include <cmath>
+#include <fftw3.h>
+
+// Apply GCC-PHAT between two FFT signals and return correlation peak
+double estimate_gcc_phat_directionality(const std::vector<std::complex<double>>& fft1,
+                                        const std::vector<std::complex<double>>& fft2) {
+    int N = fft1.size();
+    std::vector<std::complex<double>> cross_spectrum(N);
+
+    // Compute PHAT-weighted cross-spectrum
+    for (int i = 0; i < N; ++i) {
+        std::complex<double> prod = fft1[i] * std::conj(fft2[i]);
+        cross_spectrum[i] = prod / (std::abs(prod) + 1e-9); // add epsilon to avoid div by zero
+    }
+
+    // IFFT setup using FFTW
+    fftw_complex* in = reinterpret_cast<fftw_complex*>(cross_spectrum.data());
+    std::vector<std::complex<double>> time_domain(N);
+    fftw_complex* out = reinterpret_cast<fftw_complex*>(time_domain.data());
+
+    fftw_plan plan = fftw_plan_dft_1d(N, in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftw_execute(plan);
+    fftw_destroy_plan(plan);
+
+    // Find the peak in time-domain correlation
+    int peak_index = 0;
+    double max_val = 0.0;
+    for (int i = 0; i < N; ++i) {
+        double mag = std::abs(time_domain[i]);
+        if (mag > max_val) {
+            max_val = mag;
+            peak_index = i;
+        }
+    }
+
+    // Interpret peak index (e.g., near zero -> forward current; delayed -> reverse current)
+    double time_shift = static_cast<double>(peak_index);
+    if (peak_index > N / 2) {
+        time_shift -= N; // shift negative delays for FFT symmetry
+    }
+
+    return time_shift;
+}
