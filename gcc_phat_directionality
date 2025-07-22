@@ -1,3 +1,12 @@
+/*
+ * How to Use This
+ * 1. Capture raw signals from two sensors.
+ * 2. Apply FFT (e.g., using FFTW or KissFFT).
+ * 3. Feed FFT results into estimate_gcc_phat_directionality().
+ * 4. A peak close to zero implies direct forward propagation.
+ * 5. A delayed or smeared peak may suggest reflected (reverse) current.
+ */
+
 #include <complex>
 #include <vector>
 #include <cmath>
